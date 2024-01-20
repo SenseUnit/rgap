@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	SignaturePrefix = "RGAP announce"
-	SignatureSize   = 32
+	SignaturePrefix        = "RGAP announce"
+	SignatureSize          = 32
+	V1              uint16 = 0x0100
 )
 
 var SignaturePrefixBytes = []byte(SignaturePrefix)

@@ -102,8 +102,7 @@ var agentCmd = &cobra.Command{
 			Interval:     interval,
 			Destinations: destinations,
 		}
-		fmt.Printf("%+v\n", cfg)
-		return nil
+		return rgap.NewAgent(cfg).Run(cmd.Context())
 	},
 }
 
