@@ -6,7 +6,11 @@ import (
 	"fmt"
 )
 
-type PSK [32]byte
+const (
+	PSKSize = 32
+)
+
+type PSK [PSKSize]byte
 
 func (psk *PSK) AsSlice() []byte {
 	return psk[:]
@@ -14,6 +18,18 @@ func (psk *PSK) AsSlice() []byte {
 
 func (psk *PSK) AsHexString() string {
 	return hex.EncodeToString(psk.AsSlice())
+}
+
+func (psk *PSK) FromHexString(s string) error {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return fmt.Errorf("PSK hex decoding failed: %w", err)
+	}
+	if len(b) != PSKSize {
+		return fmt.Errorf("incorrect PSK length. Expected %d, got %d", PSKSize, len(b))
+	}
+	copy(psk.AsSlice(), b)
+	return nil
 }
 
 func (psk *PSK) String() string {
