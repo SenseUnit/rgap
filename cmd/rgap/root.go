@@ -8,9 +8,10 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   progName,
-	Short: "Redundancy Group Announcement Protocol",
-	Long:  `See https://gist.github.com/Snawoot/39282757e5f7db40632e5e01280b683f for more details.`,
+	Use:          progName,
+	Short:        "Redundancy Group Announcement Protocol",
+	Long:         `See https://gist.github.com/Snawoot/39282757e5f7db40632e5e01280b683f for more details.`,
+	SilenceUsage: true,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
