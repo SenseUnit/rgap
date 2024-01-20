@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"net"
+	"net/netip"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -10,13 +11,42 @@ import (
 	"github.com/Snawoot/rgap"
 )
 
+const (
+	envPSK     = "RGAP_PSK"
+	envAddress = "RGAP_ADDRESS"
+)
+
 var (
 	group        uint64
-	address      net.IP
+	address      addressOption
 	key          pskOption
 	interval     time.Duration
 	destinations []string
 )
+
+type addressOption struct {
+	addr *netip.Addr
+}
+
+func (a *addressOption) String() string {
+	if a == nil || a.addr == nil {
+		return "<nil>"
+	}
+	return a.addr.String()
+}
+
+func (a *addressOption) Set(s string) error {
+	addr, err := netip.ParseAddr(s)
+	if err != nil {
+		return err
+	}
+	a.addr = &addr
+	return nil
+}
+
+func (a *addressOption) Type() string {
+	return "ip"
+}
 
 type pskOption struct {
 	psk *rgap.PSK
@@ -46,8 +76,34 @@ func (psk *pskOption) Type() string {
 var agentCmd = &cobra.Command{
 	Use:   "agent",
 	Short: "Run agent to send announcements",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(group, address, key.psk, interval, destinations)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if address.addr == nil {
+			envAddressVal, ok := os.LookupEnv(envAddress)
+			if !ok {
+				return fmt.Errorf("announced address is not specified neither in command line argument nor in %s environment variable", envAddress)
+			}
+			if err := address.Set(envAddressVal); err != nil {
+				return err
+			}
+		}
+		if key.psk == nil {
+			hexpsk, ok := os.LookupEnv(envPSK)
+			if !ok {
+				return fmt.Errorf("PSK is not specified neither in command line argument nor in %s environment variable", envPSK)
+			}
+			if err := key.Set(hexpsk); err != nil {
+				return err
+			}
+		}
+		cfg := &rgap.AgentConfig{
+			Group:        group,
+			Address:      *address.addr,
+			Key:          *key.psk,
+			Interval:     interval,
+			Destinations: destinations,
+		}
+		fmt.Printf("%+v\n", cfg)
+		return nil
 	},
 }
 
@@ -64,7 +120,7 @@ func init() {
 	// is called directly, e.g.:
 	// agentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	agentCmd.Flags().Uint64VarP(&group, "group", "g", 0, "redundancy group")
-	agentCmd.Flags().IPVarP(&address, "address", "a", nil, "IP address to announce")
+	agentCmd.Flags().VarP(&address, "address", "a", "IP address to announce")
 	agentCmd.Flags().VarP(&key, "psk", "k", "pre-shared key for announcement signature")
 	agentCmd.Flags().DurationVarP(&interval, "interval", "i", 0, "announcement interval. If not specified agent sends one announce and exits")
 	agentCmd.Flags().StringArrayVarP(&destinations, "dst", "d", nil, "announcement destination address:port. Can be specified multiple times")
