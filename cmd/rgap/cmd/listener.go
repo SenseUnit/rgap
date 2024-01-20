@@ -13,7 +13,7 @@ import (
 // listenerCmd represents the listener command
 var listenerCmd = &cobra.Command{
 	Use:   "listener",
-	Short: "A brief description of your command",
+	Short: "Starts listener accepting and processing announcements",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
