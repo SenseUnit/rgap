@@ -6,13 +6,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   progName,
 	Short: "Redundancy Group Announcement Protocol",
-	Long: `See https://gist.github.com/Snawoot/39282757e5f7db40632e5e01280b683f for more details.`,
+	Long:  `See https://gist.github.com/Snawoot/39282757e5f7db40632e5e01280b683f for more details.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -38,5 +36,3 @@ func init() {
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-
