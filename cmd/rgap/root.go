@@ -10,7 +10,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "rgap",
+	Use:   progName,
 	Short: "Redundancy Group Announcement Protocol",
 	Long: `See https://gist.github.com/Snawoot/39282757e5f7db40632e5e01280b683f for more details.`,
 	// Uncomment the following line if your bare application
