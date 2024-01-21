@@ -28,6 +28,9 @@ func NewLog(cfg *config.OutputConfig, bridge iface.GroupBridge) (*Log, error) {
 	if err := cfg.Spec.Decode(&lc); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal log output config: %w", err)
 	}
+	if lc.Interval <= 0 {
+		return nil, fmt.Errorf("incorrect log interval: %v", lc.Interval)
+	}
 	return &Log{
 		interval: lc.Interval,
 		bridge:   bridge,
