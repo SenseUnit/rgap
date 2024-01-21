@@ -41,7 +41,9 @@ func (a *Agent) Run(ctx context.Context) error {
 	}
 
 	shoot := func(t time.Time) {
-		err := a.singleRun(ctx, t)
+		runCtx, done := context.WithTimeout(ctx, a.cfg.Interval)
+		defer done()
+		err := a.singleRun(runCtx, t)
 		if err != nil {
 			log.Printf("run error: %v", err)
 		}
@@ -102,7 +104,16 @@ func (a *Agent) sendSingle(ctx context.Context, msg []byte, dst string) error {
 	if err != nil {
 		return fmt.Errorf("Agent.sendSingle dial failed: %w", err)
 	}
-	defer conn.Close()
+	connCloseSignal := make(chan struct{})
+	defer close(connCloseSignal)
+	go func() {
+		select {
+		case <-connCloseSignal:
+			conn.Close()
+		case <-ctx.Done():
+			conn.Close()
+		}
+	}()
 	if _, err := conn.Write(msg); err != nil {
 		return fmt.Errorf("Agent.sendSingle send failed: %w", err)
 	}
