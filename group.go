@@ -19,6 +19,11 @@ type Group struct {
 	readyAt        time.Time
 }
 
+type GroupItem struct {
+	Address   netip.Addr
+	ExpiresAt time.Time
+}
+
 func GroupFromConfig(cfg *GroupConfig) (*Group, error) {
 	if cfg.PSK == nil {
 		return nil, fmt.Errorf("group %d: PSK is not set", cfg.ID)
@@ -89,4 +94,19 @@ func (g *Group) Ingest(a *Announcement) error {
 		g.addrSet.Set(address, struct{}{}, expireAt.Sub(now))
 	}
 	return nil
+}
+
+func (g *Group) List() []GroupItem {
+	items := g.addrSet.Items()
+	res := make([]GroupItem, 0, len(items))
+	for _, item := range items {
+		if item.IsExpired() {
+			continue
+		}
+		res = append(res, GroupItem{
+			Address:   item.Key(),
+			ExpiresAt: item.ExpiresAt(),
+		})
+	}
+	return res
 }

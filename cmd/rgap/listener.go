@@ -26,6 +26,7 @@ var listenerCmd = &cobra.Command{
 		}
 		defer cfgF.Close()
 		dec := yaml.NewDecoder(cfgF)
+		dec.KnownFields(true)
 		if err := dec.Decode(&cfg); err != nil {
 			return fmt.Errorf("unable to decode configuration file: %w", err)
 		}
