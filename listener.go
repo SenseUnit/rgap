@@ -18,7 +18,7 @@ type GroupConfig struct {
 
 type OutputConfig struct {
 	Kind string
-	Spec *yaml.Node
+	Spec yaml.Node
 }
 
 type ListenerConfig struct {
