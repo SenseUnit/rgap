@@ -57,12 +57,13 @@ func NewListener(cfg *ListenerConfig) (*Listener, error) {
 }
 
 func (l *Listener) announceCallback(label string, ann *Announcement) {
-	log.Printf("new announcement from %s: %s", label, ann.String())
 	group, ok := l.groups[ann.Data.RedundancyID]
 	if !ok {
 		return
 	}
-	log.Println(ann.CheckSignature(group.PSK()))
+	if err := group.Ingest(ann); err != nil {
+		log.Printf("Group %d ingestion error: %v", err)
+	}
 }
 
 func (l *Listener) Run(ctx context.Context) error {
