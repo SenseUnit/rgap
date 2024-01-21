@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 
+	"github.com/Snawoot/rgap/psk"
 	"github.com/spf13/cobra"
-
-	"github.com/Snawoot/rgap"
 )
 
 // genpskCmd represents the genpsk command
@@ -13,7 +12,7 @@ var genpskCmd = &cobra.Command{
 	Use:   "genpsk",
 	Short: "Generate and output hex-encoded pre-shared key",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		psk, err := rgap.GeneratePSK()
+		psk, err := psk.GeneratePSK()
 		if err != nil {
 			return fmt.Errorf("PSK generation failed: %w", err)
 		}

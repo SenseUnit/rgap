@@ -9,13 +9,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Snawoot/rgap/psk"
 	"github.com/hashicorp/go-multierror"
 )
 
 type AgentConfig struct {
 	Group        uint64
 	Address      netip.Addr
-	Key          PSK
+	Key          psk.PSK
 	Interval     time.Duration
 	Destinations []string
 	Dialer       Dialer

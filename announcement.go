@@ -7,6 +7,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+
+	"github.com/Snawoot/rgap/psk"
 )
 
 const (
@@ -42,7 +44,7 @@ func (ad *AnnouncementData) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-func (ad *AnnouncementData) CalculateSignature(key PSK) ([SignatureSize]byte, error) {
+func (ad *AnnouncementData) CalculateSignature(key psk.PSK) ([SignatureSize]byte, error) {
 	h := hmac.New(sha256.New, key.AsSlice())
 	h.Write([]byte(SignaturePrefixBytes))
 	if err := binary.Write(h, binary.BigEndian, ad); err != nil {
@@ -81,7 +83,7 @@ func (a *Announcement) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-func (a *Announcement) CheckSignature(key PSK) (bool, error) {
+func (a *Announcement) CheckSignature(key psk.PSK) (bool, error) {
 	sig, err := a.Data.CalculateSignature(key)
 	if err != nil {
 		return false, fmt.Errorf("signature verification failed: %w", err)

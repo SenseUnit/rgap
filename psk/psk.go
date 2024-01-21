@@ -1,4 +1,4 @@
-package rgap
+package psk
 
 import (
 	"crypto/rand"

@@ -4,42 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
-	"gopkg.in/yaml.v3"
+	"github.com/Snawoot/rgap/config"
+	"github.com/Snawoot/rgap/iface"
+	"github.com/Snawoot/rgap/output"
 )
 
-type StartStopper interface {
-	Start() error
-	Stop() error
-}
-
-type GroupConfig struct {
-	ID             uint64
-	PSK            *PSK
-	Expire         time.Duration
-	ClockSkew      time.Duration `yaml:"clock_skew"`
-	ReadinessDelay time.Duration `yaml:"readiness_delay"`
-}
-
-type OutputConfig struct {
-	Kind string
-	Spec yaml.Node
-}
-
-type ListenerConfig struct {
-	Listen  []string
-	Groups  []GroupConfig
-	Outputs []OutputConfig
-}
-
 type Listener struct {
-	sources []StartStopper
+	sources []iface.StartStopper
 	groups  map[uint64]*Group
-	outputs []StartStopper
+	outputs []iface.StartStopper
 }
 
-func NewListener(cfg *ListenerConfig) (*Listener, error) {
+func NewListener(cfg *config.ListenerConfig) (*Listener, error) {
 	l := &Listener{
 		groups: make(map[uint64]*Group),
 	}
@@ -55,7 +32,7 @@ func NewListener(cfg *ListenerConfig) (*Listener, error) {
 		l.sources = append(l.sources, src)
 	}
 	for i, oc := range cfg.Outputs {
-		out, err := OutputFromConfig(&oc, l)
+		out, err := output.OutputFromConfig(&oc, l)
 		if err != nil {
 			return nil, fmt.Errorf("unable to construct new output with index %d: %w", i, err)
 		}
@@ -75,7 +52,7 @@ func (l *Listener) announceCallback(label string, ann *Announcement) {
 }
 
 func (l *Listener) Run(ctx context.Context) error {
-	var primeStack []StartStopper
+	var primeStack []iface.StartStopper
 	defer func() {
 		for i := len(primeStack) - 1; i >= 0; i-- {
 			if err := primeStack[i].Stop(); err != nil {
@@ -115,10 +92,18 @@ func (l *Listener) Groups() []uint64 {
 	return res
 }
 
-func (l *Listener) ListGroup(id uint64) []GroupItem {
+func (l *Listener) ListGroup(id uint64) []iface.GroupItem {
 	g, ok := l.groups[id]
 	if !ok {
 		return nil
 	}
 	return g.List()
+}
+
+func (l *Listener) GroupReady(id uint64) bool {
+	g, ok := l.groups[id]
+	if !ok {
+		return true
+	}
+	return g.Ready()
 }

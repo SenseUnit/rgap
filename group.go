@@ -6,12 +6,15 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/Snawoot/rgap/config"
+	"github.com/Snawoot/rgap/iface"
+	"github.com/Snawoot/rgap/psk"
 	"github.com/jellydator/ttlcache/v3"
 )
 
 type Group struct {
 	id             uint64
-	psk            PSK
+	psk            psk.PSK
 	expire         time.Duration
 	clockSkew      time.Duration
 	readinessDelay time.Duration
@@ -19,12 +22,20 @@ type Group struct {
 	readyAt        time.Time
 }
 
-type GroupItem struct {
-	Address   netip.Addr
-	ExpiresAt time.Time
+type groupItem struct {
+	address   netip.Addr
+	expiresAt time.Time
 }
 
-func GroupFromConfig(cfg *GroupConfig) (*Group, error) {
+func (gi groupItem) Address() netip.Addr {
+	return gi.address
+}
+
+func (gi groupItem) ExpiresAt() time.Time {
+	return gi.expiresAt
+}
+
+func GroupFromConfig(cfg *config.GroupConfig) (*Group, error) {
 	if cfg.PSK == nil {
 		return nil, fmt.Errorf("group %d: PSK is not set", cfg.ID)
 	}
@@ -96,17 +107,21 @@ func (g *Group) Ingest(a *Announcement) error {
 	return nil
 }
 
-func (g *Group) List() []GroupItem {
+func (g *Group) List() []iface.GroupItem {
 	items := g.addrSet.Items()
-	res := make([]GroupItem, 0, len(items))
+	res := make([]iface.GroupItem, 0, len(items))
 	for _, item := range items {
 		if item.IsExpired() {
 			continue
 		}
-		res = append(res, GroupItem{
-			Address:   item.Key(),
-			ExpiresAt: item.ExpiresAt(),
+		res = append(res, groupItem{
+			address:   item.Key(),
+			expiresAt: item.ExpiresAt(),
 		})
 	}
 	return res
+}
+
+func (g *Group) Ready() bool {
+	return time.Now().After(g.readyAt)
 }

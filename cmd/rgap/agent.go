@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Snawoot/rgap"
+	"github.com/Snawoot/rgap/psk"
 )
 
 const (
@@ -49,26 +50,26 @@ func (a *addressOption) Type() string {
 }
 
 type pskOption struct {
-	psk *rgap.PSK
+	psk *psk.PSK
 }
 
-func (psk *pskOption) String() string {
-	if psk.psk == nil {
+func (pskOpt *pskOption) String() string {
+	if pskOpt.psk == nil {
 		return "<nil>"
 	}
-	return psk.psk.String()
+	return pskOpt.psk.String()
 }
 
-func (psk *pskOption) Set(s string) error {
-	newPSK := new(rgap.PSK)
+func (pskOpt *pskOption) Set(s string) error {
+	newPSK := new(psk.PSK)
 	if err := newPSK.FromHexString(s); err != nil {
 		return err
 	}
-	psk.psk = newPSK
+	pskOpt.psk = newPSK
 	return nil
 }
 
-func (psk *pskOption) Type() string {
+func (_ *pskOption) Type() string {
 	return "hexstring"
 }
 

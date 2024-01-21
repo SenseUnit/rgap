@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/Snawoot/rgap"
+	"github.com/Snawoot/rgap/config"
 )
 
 var (
@@ -19,7 +20,7 @@ var listenerCmd = &cobra.Command{
 	Use:   "listener",
 	Short: "Starts listener accepting and processing announcements",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var cfg rgap.ListenerConfig
+		var cfg config.ListenerConfig
 		cfgF, err := os.Open(configPath)
 		if err != nil {
 			return fmt.Errorf("unable to read configuration file: %w", err)
