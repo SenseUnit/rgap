@@ -26,17 +26,14 @@ var listenerCmd = &cobra.Command{
 		}
 		defer cfgF.Close()
 		dec := yaml.NewDecoder(cfgF)
-		//dec.KnownFields(true)
 		if err := dec.Decode(&cfg); err != nil {
 			return fmt.Errorf("unable to decode configuration file: %w", err)
 		}
-		fmt.Println("listener called")
 		listener, err := rgap.NewListener(&cfg)
 		if err != nil {
 			return fmt.Errorf("can't initialize listener: %w", err)
 		}
-		listener = listener
-		return nil
+		return listener.Run(cmd.Context())
 	},
 }
 
