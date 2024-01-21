@@ -24,7 +24,14 @@ type Log struct {
 }
 
 func NewLog(cfg *config.OutputConfig, bridge iface.GroupBridge) (*Log, error) {
-	return nil, nil
+	var lc LogConfig
+	if err := cfg.Spec.Decode(&lc); err != nil {
+		return nil, fmt.Errorf("cannot unmarshal log output config: %w", err)
+	}
+	return &Log{
+		interval: lc.Interval,
+		bridge:   bridge,
+	}, nil
 }
 
 func (o *Log) Start() error {
@@ -51,7 +58,7 @@ func (o *Log) loop() {
 	for {
 		select {
 		case <-o.ctx.Done():
-			break
+			return
 		case <-ticker.C:
 			o.dump()
 		}
@@ -67,7 +74,7 @@ func (o *Log) dump() {
 	var report strings.Builder
 	fmt.Fprintln(&report, "Groups snapshot:")
 	for _, gid := range o.bridge.Groups() {
-		fmt.Fprintf(&report, "  - Group %d (%s):", gid, readinessLabels[o.bridge.GroupReady(gid)])
+		fmt.Fprintf(&report, "  - Group %d (%s):\n", gid, readinessLabels[o.bridge.GroupReady(gid)])
 		for _, item := range o.bridge.ListGroup(gid) {
 			fmt.Fprintf(&report, "    - %s (till %v)\n", item.Address().Unmap().String(), item.ExpiresAt())
 		}
