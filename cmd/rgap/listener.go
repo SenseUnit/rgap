@@ -2,22 +2,41 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
+
+	"github.com/Snawoot/rgap"
+)
+
+var (
+	configPath string
 )
 
 // listenerCmd represents the listener command
 var listenerCmd = &cobra.Command{
 	Use:   "listener",
 	Short: "Starts listener accepting and processing announcements",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		var cfg rgap.ListenerConfig
+		cfgF, err := os.Open(configPath)
+		if err != nil {
+			return fmt.Errorf("unable to read configuration file: %w", err)
+		}
+		defer cfgF.Close()
+		dec := yaml.NewDecoder(cfgF)
+		//dec.KnownFields(true)
+		if err := dec.Decode(&cfg); err != nil {
+			return fmt.Errorf("unable to decode configuration file: %w", err)
+		}
 		fmt.Println("listener called")
+		listener, err := rgap.NewListener(&cfg)
+		if err != nil {
+			return fmt.Errorf("can't initialize listener: %w", err)
+		}
+		listener = listener
+		return nil
 	},
 }
 
@@ -33,4 +52,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// listenerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	listenerCmd.Flags().StringVarP(&configPath, "config", "c", "rgap.yaml", "configuration file")
 }

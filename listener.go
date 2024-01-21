@@ -1,6 +1,8 @@
 package rgap
 
 import (
+	"errors"
+	"os"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -8,7 +10,7 @@ import (
 
 type GroupConfig struct {
 	ID             uint64
-	PSK            PSK
+	PSK            *PSK
 	Expire         time.Duration
 	ClockSkew      time.Duration `yaml:"clock_skew"`
 	ReadinessDelay time.Duration `yaml:"readiness_delay"`
@@ -23,4 +25,16 @@ type ListenerConfig struct {
 	Listen  []string
 	Groups  []GroupConfig
 	Outputs []OutputConfig
+}
+
+type Listener struct {
+	cfg *ListenerConfig
+}
+
+func NewListener(cfg *ListenerConfig) (*Listener, error) {
+	enc := yaml.NewEncoder(os.Stdout)
+	if err := enc.Encode(cfg); err != nil {
+		panic(err)
+	}
+	return nil, errors.New("not implemented")
 }

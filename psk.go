@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -34,6 +36,21 @@ func (psk *PSK) FromHexString(s string) error {
 
 func (psk *PSK) String() string {
 	return psk.AsHexString()
+}
+
+func (psk *PSK) UnmarshalYAML(value *yaml.Node) error {
+	var hexval string
+	if err := value.Decode(&hexval); err != nil {
+		return fmt.Errorf("PSK unmarshaler unable to retrieve hex string from given node: %w", err)
+	}
+	if err := psk.FromHexString(hexval); err != nil {
+		return fmt.Errorf("PSK unmarshaller can't set value from hex string: %w", err)
+	}
+	return nil
+}
+
+func (psk *PSK) MarshalYAML() (interface{}, error) {
+	return psk.AsHexString(), nil
 }
 
 func GeneratePSK() (PSK, error) {
