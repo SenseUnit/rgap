@@ -3,6 +3,7 @@ package rgap
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"net/netip"
 	"sync"
@@ -35,15 +36,36 @@ func NewAgent(cfg *AgentConfig) *Agent {
 }
 
 func (a *Agent) Run(ctx context.Context) error {
-	return a.singleRun(ctx)
+	if a.cfg.Interval <= 0 {
+		return a.singleRun(ctx, time.Now())
+	}
+
+	shoot := func(t time.Time) {
+		err := a.singleRun(ctx, t)
+		if err != nil {
+			log.Printf("run error: %v", err)
+		}
+	}
+
+	ticker := time.NewTicker(a.cfg.Interval)
+	defer ticker.Stop()
+	shoot(time.Now())
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case t := <-ticker.C:
+			shoot(t)
+		}
+	}
 }
 
-func (a *Agent) singleRun(ctx context.Context) error {
+func (a *Agent) singleRun(ctx context.Context, t time.Time) error {
 	announcement := Announcement{
 		Data: AnnouncementData{
 			Version:          V1,
 			RedundancyID:     a.cfg.Group,
-			Timestamp:        time.Now().UnixMicro(),
+			Timestamp:        t.UnixMicro(),
 			AnnouncedAddress: a.cfg.Address.As16(),
 		},
 	}
