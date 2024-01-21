@@ -122,5 +122,5 @@ func init() {
 	agentCmd.Flags().VarP(&address, "address", "a", "IP address to announce")
 	agentCmd.Flags().VarP(&key, "psk", "k", "pre-shared key for announcement signature")
 	agentCmd.Flags().DurationVarP(&interval, "interval", "i", 0, "announcement interval. If not specified agent sends one announce and exits")
-	agentCmd.Flags().StringArrayVarP(&destinations, "dst", "d", nil, "announcement destination address:port. Can be specified multiple times")
+	agentCmd.Flags().StringArrayVarP(&destinations, "dst", "d", []string{"239.82.71.65:8271"}, "announcement destination address:port. Can be specified multiple times")
 }
