@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 
@@ -20,12 +21,14 @@ type DNSMapping struct {
 type DNSServerConfig struct {
 	BindAddress string `yaml:"bind_address"`
 	Mappings    map[string]DNSMapping
+	Compress    bool
 }
 
 type DNSServer struct {
 	bridge      iface.GroupBridge
 	bindAddress string
 	mappings    map[string]DNSMapping
+	compress    bool
 	tcpServer   *dns.Server
 	udpServer   *dns.Server
 	tcpDone     chan struct{}
@@ -46,6 +49,7 @@ func NewDNSServer(cfg *config.OutputConfig, bridge iface.GroupBridge) (*DNSServe
 		bridge:      bridge,
 		bindAddress: oc.BindAddress,
 		mappings:    mappings,
+		compress:    oc.Compress,
 	}, nil
 }
 
@@ -102,5 +106,103 @@ func (o *DNSServer) Stop() error {
 	return nil
 }
 
+func (o *DNSServer) failDNSReq(w dns.ResponseWriter, r *dns.Msg) {
+	m := new(dns.Msg)
+	m.Compress = o.compress
+	m.SetRcode(r, dns.RcodeServerFailure)
+	w.WriteMsg(m)
+}
+
+func (o *DNSServer) serveEmptyResponse(w dns.ResponseWriter, r *dns.Msg) {
+	m := new(dns.Msg)
+	m.Compress = o.compress
+	m.SetReply(r)
+	w.WriteMsg(m)
+}
+
 func (o *DNSServer) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+	if len(r.Question) == 0 {
+		o.failDNSReq(w, r)
+		return
+	}
+
+	dom := r.Question[0].Name
+	name := strings.ToLower(strings.TrimRight(dom, "."))
+	qtype := r.Question[0].Qtype
+
+	if r.Question[0].Qclass != dns.ClassINET {
+		o.failDNSReq(w, r)
+		return
+	}
+
+	log.Printf("DNS req @ %s: Name = %q, QType = %s", o.bindAddress, name, dns.Type(qtype).String())
+
+	switch qtype {
+	case dns.TypeAAAA, dns.TypeA:
+	default:
+		o.failDNSReq(w, r)
+		return
+	}
+
+	mapping, ok := o.mappings[name]
+	if !ok {
+		o.failDNSReq(w, r)
+		return
+	}
+
+	if !o.bridge.GroupReady(mapping.Group) {
+		o.failDNSReq(w, r)
+		return
+	}
+
+	m := new(dns.Msg)
+	m.Compress = o.compress
+
+	items := o.bridge.ListGroup(mapping.Group)
+	if len(items) == 0 {
+		// group is empty - fallback needed
+		for _, addr := range mapping.FallbackAddresses {
+			netAddr := addr.Addr()
+			switch qtype {
+			case dns.TypeA:
+				if netAddr.Is4() {
+					m.Answer = append(m.Answer, &dns.A{
+						Hdr: dns.RR_Header{Name: dom, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 0},
+						A:   netAddr.AsSlice(),
+					})
+				}
+			case dns.TypeAAAA:
+				if netAddr.Is6() {
+					m.Answer = append(m.Answer, &dns.AAAA{
+						Hdr:  dns.RR_Header{Name: dom, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: 0},
+						AAAA: netAddr.AsSlice(),
+					})
+				}
+			}
+		}
+	} else {
+		now := time.Now()
+		for _, item := range items {
+			netAddr := item.Address().Unmap()
+			ttl := uint32(item.ExpiresAt().Sub(now).Seconds())
+			switch qtype {
+			case dns.TypeA:
+				if netAddr.Is4() {
+					m.Answer = append(m.Answer, &dns.A{
+						Hdr: dns.RR_Header{Name: dom, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: ttl},
+						A:   netAddr.AsSlice(),
+					})
+				}
+			case dns.TypeAAAA:
+				if netAddr.Is6() {
+					m.Answer = append(m.Answer, &dns.AAAA{
+						Hdr:  dns.RR_Header{Name: dom, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: ttl},
+						AAAA: netAddr.AsSlice(),
+					})
+				}
+			}
+		}
+	}
+	m.SetReply(r)
+	w.WriteMsg(m)
 }
