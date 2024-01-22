@@ -61,8 +61,8 @@ outputs:
         - group: 1000
           hostname: worker
           fallback_addresses:
-            - 8.8.8.8
-            - 8.8.4.4
+            - 1.2.3.4
+            - 5.6.7.8
       prepend_lines:
         - "# Auto-generated hosts file"
         - "# Do not edit manually, changes will be overwritten by RGAP"
