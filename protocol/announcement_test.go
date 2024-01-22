@@ -1,8 +1,11 @@
-package rgap
+package protocol
 
 import (
 	"testing"
 	"time"
+
+	"github.com/Snawoot/rgap/psk"
+	"github.com/Snawoot/rgap/util"
 )
 
 func noError(err error) {
@@ -12,17 +15,17 @@ func noError(err error) {
 }
 
 func TestSizes(t *testing.T) {
-	if announcementSize != 66 {
-		t.Errorf("announcement size seem to be incorrect: %d != 66", announcementSize)
+	if AnnouncementSize != 66 {
+		t.Errorf("announcement size seem to be incorrect: %d != 66", AnnouncementSize)
 	}
-	if announcementDataSize != 34 {
-		t.Errorf("announcement size seem to be incorrect: %d != 34", announcementDataSize)
+	if AnnouncementDataSize != 34 {
+		t.Errorf("announcement size seem to be incorrect: %d != 34", AnnouncementDataSize)
 	}
 }
 
 func TestMarshalUnmarshal(t *testing.T) {
 
-	key := Must(GeneratePSK())
+	key := util.Must(psk.GeneratePSK())
 
 	msg := Announcement{
 		Data: AnnouncementData{
@@ -33,8 +36,8 @@ func TestMarshalUnmarshal(t *testing.T) {
 		},
 	}
 
-	msg.Signature = Must(msg.Data.CalculateSignature(key))
-	pkt := Must(msg.MarshalBinary())
+	msg.Signature = util.Must(msg.Data.CalculateSignature(key))
+	pkt := util.Must(msg.MarshalBinary())
 
 	// Display the announcement message
 	t.Log(msg.String())
@@ -42,7 +45,7 @@ func TestMarshalUnmarshal(t *testing.T) {
 
 	msg1 := Announcement{}
 	noError(msg1.UnmarshalBinary(pkt))
-	if res := Must(msg1.CheckSignature(key)); !res {
+	if res := util.Must(msg1.CheckSignature(key)); !res {
 		t.Error("signature verification failed!")
 		return
 	}

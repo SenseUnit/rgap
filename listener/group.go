@@ -1,4 +1,4 @@
-package rgap
+package listener
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/Snawoot/rgap/config"
 	"github.com/Snawoot/rgap/iface"
+	"github.com/Snawoot/rgap/protocol"
 	"github.com/Snawoot/rgap/psk"
 	"github.com/jellydator/ttlcache/v3"
 )
@@ -40,7 +41,7 @@ func GroupFromConfig(cfg *config.GroupConfig) (*Group, error) {
 		return nil, fmt.Errorf("group %d: PSK is not set", cfg.ID)
 	}
 	if cfg.Expire <= 0 {
-		return nil, fmt.Errorf("group %d: incorrect expiration time")
+		return nil, fmt.Errorf("group %d: incorrect expiration time", cfg.Expire)
 	}
 	g := &Group{
 		id:             cfg.ID,
@@ -80,8 +81,8 @@ func (g *Group) Stop() error {
 	return nil
 }
 
-func (g *Group) Ingest(a *Announcement) error {
-	if a.Data.Version != V1 {
+func (g *Group) Ingest(a *protocol.Announcement) error {
+	if a.Data.Version != protocol.V1 {
 		return nil
 	}
 	now := time.Now()

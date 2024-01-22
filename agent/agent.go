@@ -1,32 +1,23 @@
-package rgap
+package agent
 
 import (
 	"context"
 	"fmt"
 	"log"
 	"net"
-	"net/netip"
 	"sync"
 	"time"
 
-	"github.com/Snawoot/rgap/psk"
+	"github.com/Snawoot/rgap/config"
+	"github.com/Snawoot/rgap/protocol"
 	"github.com/hashicorp/go-multierror"
 )
 
-type AgentConfig struct {
-	Group        uint64
-	Address      netip.Addr
-	Key          psk.PSK
-	Interval     time.Duration
-	Destinations []string
-	Dialer       Dialer
-}
-
 type Agent struct {
-	cfg *AgentConfig
+	cfg *config.AgentConfig
 }
 
-func NewAgent(cfg *AgentConfig) *Agent {
+func NewAgent(cfg *config.AgentConfig) *Agent {
 	a := &Agent{
 		cfg: cfg,
 	}
@@ -64,9 +55,9 @@ func (a *Agent) Run(ctx context.Context) error {
 }
 
 func (a *Agent) singleRun(ctx context.Context, t time.Time) error {
-	announcement := Announcement{
-		Data: AnnouncementData{
-			Version:          V1,
+	announcement := protocol.Announcement{
+		Data: protocol.AnnouncementData{
+			Version:          protocol.V1,
 			RedundancyID:     a.cfg.Group,
 			Timestamp:        t.UnixMicro(),
 			AnnouncedAddress: a.cfg.Address.As16(),

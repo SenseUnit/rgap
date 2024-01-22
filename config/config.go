@@ -1,12 +1,23 @@
 package config
 
 import (
+	"net/netip"
 	"time"
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/Snawoot/rgap/iface"
 	"github.com/Snawoot/rgap/psk"
 )
+
+type AgentConfig struct {
+	Group        uint64
+	Address      netip.Addr
+	Key          psk.PSK
+	Interval     time.Duration
+	Destinations []string
+	Dialer       iface.Dialer
+}
 
 type GroupConfig struct {
 	ID             uint64

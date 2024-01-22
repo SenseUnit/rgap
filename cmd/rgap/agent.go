@@ -8,7 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Snawoot/rgap"
+	"github.com/Snawoot/rgap/agent"
+	"github.com/Snawoot/rgap/config"
 	"github.com/Snawoot/rgap/psk"
 )
 
@@ -96,14 +97,14 @@ var agentCmd = &cobra.Command{
 				return err
 			}
 		}
-		cfg := &rgap.AgentConfig{
+		cfg := &config.AgentConfig{
 			Group:        group,
 			Address:      *address.addr,
 			Key:          *key.psk,
 			Interval:     interval,
 			Destinations: destinations,
 		}
-		return rgap.NewAgent(cfg).Run(cmd.Context())
+		return agent.NewAgent(cfg).Run(cmd.Context())
 	},
 }
 

@@ -1,9 +1,15 @@
 package iface
 
 import (
+	"context"
+	"net"
 	"net/netip"
 	"time"
 )
+
+type Dialer interface {
+	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+}
 
 type GroupBridge interface {
 	Groups() []uint64

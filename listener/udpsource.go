@@ -1,22 +1,24 @@
-package rgap
+package listener
 
 import (
 	"context"
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/Snawoot/rgap/protocol"
 )
 
 type UDPSource struct {
 	address   string
 	label     string
-	callback  func(string, *Announcement)
+	callback  func(string, *protocol.Announcement)
 	ctx       context.Context
 	ctxCancel func()
 	loopDone  chan struct{}
 }
 
-func NewUDPSource(address string, label string, callback func(string, *Announcement)) *UDPSource {
+func NewUDPSource(address string, label string, callback func(string, *protocol.Announcement)) *UDPSource {
 	s := &UDPSource{
 		address:  address,
 		label:    label,
@@ -78,15 +80,15 @@ func (s *UDPSource) readLoop(conn *net.UDPConn) {
 			if s.ctx.Err() != nil {
 				return
 			}
-			log.Printf("source %s: UDP read error: %w", s.label, err)
+			log.Printf("source %s: UDP read error: %v", s.label, err)
 			continue
 		}
-		if n != announcementSize {
+		if n != protocol.AnnouncementSize {
 			continue
 		}
-		ann := new(Announcement)
+		ann := new(protocol.Announcement)
 		if err := ann.UnmarshalBinary(buf[:n]); err != nil {
-			log.Println("announce unmarshaling failed: %v", err)
+			log.Printf("announce unmarshaling failed: %v", err)
 		}
 		s.callback(s.label, ann)
 	}

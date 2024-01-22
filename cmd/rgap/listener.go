@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/Snawoot/rgap"
 	"github.com/Snawoot/rgap/config"
+	"github.com/Snawoot/rgap/listener"
 )
 
 var (
@@ -31,7 +31,7 @@ var listenerCmd = &cobra.Command{
 		if err := dec.Decode(&cfg); err != nil {
 			return fmt.Errorf("unable to decode configuration file: %w", err)
 		}
-		listener, err := rgap.NewListener(&cfg)
+		listener, err := listener.NewListener(&cfg)
 		if err != nil {
 			return fmt.Errorf("can't initialize listener: %w", err)
 		}

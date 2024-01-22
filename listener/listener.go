@@ -1,4 +1,4 @@
-package rgap
+package listener
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/Snawoot/rgap/config"
 	"github.com/Snawoot/rgap/iface"
 	"github.com/Snawoot/rgap/output"
+	"github.com/Snawoot/rgap/protocol"
 )
 
 type Listener struct {
@@ -41,13 +42,13 @@ func NewListener(cfg *config.ListenerConfig) (*Listener, error) {
 	return l, nil
 }
 
-func (l *Listener) announceCallback(label string, ann *Announcement) {
+func (l *Listener) announceCallback(label string, ann *protocol.Announcement) {
 	group, ok := l.groups[ann.Data.RedundancyID]
 	if !ok {
 		return
 	}
 	if err := group.Ingest(ann); err != nil {
-		log.Printf("Group %d ingestion error: %v", err)
+		log.Printf("Group %d ingestion error: %v", group.ID(), err)
 	}
 }
 

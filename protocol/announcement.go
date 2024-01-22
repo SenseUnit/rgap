@@ -1,4 +1,4 @@
-package rgap
+package protocol
 
 import (
 	"bytes"
@@ -26,10 +26,10 @@ type AnnouncementData struct {
 	AnnouncedAddress [16]byte
 }
 
-var announcementDataSize = binary.Size(new(AnnouncementData))
+var AnnouncementDataSize = binary.Size(new(AnnouncementData))
 
 func (ad *AnnouncementData) MarshalBinary() (data []byte, err error) {
-	buf := bytes.NewBuffer(make([]byte, 0, announcementDataSize))
+	buf := bytes.NewBuffer(make([]byte, 0, AnnouncementDataSize))
 	if err := binary.Write(buf, binary.BigEndian, ad); err != nil {
 		return nil, fmt.Errorf("binary marshaling of announcement data failed: %w", err)
 	}
@@ -65,10 +65,10 @@ type Announcement struct {
 	Signature [SignatureSize]byte
 }
 
-var announcementSize = binary.Size(new(Announcement))
+var AnnouncementSize = binary.Size(new(Announcement))
 
 func (a *Announcement) MarshalBinary() (data []byte, err error) {
-	buf := bytes.NewBuffer(make([]byte, 0, announcementSize))
+	buf := bytes.NewBuffer(make([]byte, 0, AnnouncementSize))
 	if err := binary.Write(buf, binary.BigEndian, a); err != nil {
 		return nil, fmt.Errorf("binary marshaling of announcement failed: %w", err)
 	}
