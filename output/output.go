@@ -19,6 +19,9 @@ var outputVCMap = map[string]OutputCtor{
 	"hostsfile": func(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
 		return NewHostsFile(cfg, bridge)
 	},
+	"dns": func(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
+		return NewDNSServer(cfg, bridge)
+	},
 }
 
 func OutputFromConfig(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
