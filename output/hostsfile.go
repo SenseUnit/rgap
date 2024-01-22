@@ -1,10 +1,14 @@
 package output
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
+
+	atomicfile "github.com/natefinch/atomic"
 
 	"github.com/Snawoot/rgap/config"
 	"github.com/Snawoot/rgap/iface"
@@ -39,7 +43,7 @@ type HostsFile struct {
 
 func NewHostsFile(cfg *config.OutputConfig, bridge iface.GroupBridge) (*HostsFile, error) {
 	var hc HostsFileConfig
-	if err := cfg.Spec.Decode(&hc); err != nil {
+	if err := util.CheckedUnmarshal(&cfg.Spec, &hc); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal log output config: %w", err)
 	}
 	if hc.Interval <= 0 {
@@ -48,13 +52,26 @@ func NewHostsFile(cfg *config.OutputConfig, bridge iface.GroupBridge) (*HostsFil
 	if hc.Filename == "" {
 		return nil, fmt.Errorf("filename is not specified")
 	}
+	for i, mapping := range hc.Mappings {
+		if mapping.Hostname == "" {
+			return nil, fmt.Errorf("mapping with index %d has no hostname defined", i)
+		}
+	}
+	prependLines := make([]string, 0, len(hc.PrependLines))
+	for _, line := range hc.PrependLines {
+		prependLines = append(prependLines, strings.TrimRight(line, "\r\n"))
+	}
+	appendLines := make([]string, 0, len(hc.AppendLines))
+	for _, line := range hc.AppendLines {
+		appendLines = append(appendLines, strings.TrimRight(line, "\r\n"))
+	}
 	return &HostsFile{
 		bridge:       bridge,
 		interval:     hc.Interval,
 		filename:     hc.Filename,
 		mappings:     hc.Mappings,
-		prependLines: hc.PrependLines,
-		appendLines:  hc.AppendLines,
+		prependLines: prependLines,
+		appendLines:  appendLines,
 	}, nil
 }
 
@@ -64,14 +81,14 @@ func (o *HostsFile) Start() error {
 	o.ctxCancel = cancel
 	o.loopDone = make(chan struct{})
 	go o.loop()
-	log.Println("started log output plugin")
+	log.Printf("started hostsfile (%s) output plugin", o.filename)
 	return nil
 }
 
 func (o *HostsFile) Stop() error {
 	o.ctxCancel()
 	<-o.loopDone
-	log.Println("stopped log output plugin")
+	log.Printf("stopped hostsfile (%s) output plugin", o.filename)
 	return nil
 }
 
@@ -90,5 +107,38 @@ func (o *HostsFile) loop() {
 }
 
 func (o *HostsFile) dump() {
-	// TODO: write to file
+	var notReadyGroups []uint64
+	for _, mapping := range o.mappings {
+		if !o.bridge.GroupReady(mapping.Group) {
+			notReadyGroups = append(notReadyGroups, mapping.Group)
+		}
+	}
+	if len(notReadyGroups) > 0 {
+		log.Printf("hostsfile: skipping update because following groups are not ready: %v", notReadyGroups)
+		return
+	}
+
+	var buf bytes.Buffer
+	for _, line := range o.prependLines {
+		fmt.Fprintln(&buf, line)
+	}
+	for _, mapping := range o.mappings {
+		items := o.bridge.ListGroup(mapping.Group)
+		if len(items) == 0 {
+			for _, addr := range mapping.FallbackAddresses {
+				fmt.Fprintf(&buf, "%s %s\n", addr.String(), mapping.Hostname)
+			}
+			for _, item := range items {
+				fmt.Fprintf(&buf, "%s %s\n", item.Address().Unmap().String(), mapping.Hostname)
+			}
+			continue
+		}
+	}
+	for _, line := range o.appendLines {
+		fmt.Fprintln(&buf, line)
+	}
+	log.Println(buf.String())
+	if err := atomicfile.WriteFile(o.filename, &buf); err != nil {
+		log.Printf("unable to update destination file: %v", err)
+	}
 }

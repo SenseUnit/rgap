@@ -9,6 +9,7 @@ import (
 
 	"github.com/Snawoot/rgap/config"
 	"github.com/Snawoot/rgap/iface"
+	"github.com/Snawoot/rgap/util"
 )
 
 type LogConfig struct {
@@ -25,7 +26,7 @@ type Log struct {
 
 func NewLog(cfg *config.OutputConfig, bridge iface.GroupBridge) (*Log, error) {
 	var lc LogConfig
-	if err := cfg.Spec.Decode(&lc); err != nil {
+	if err := util.CheckedUnmarshal(&cfg.Spec, &lc); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal log output config: %w", err)
 	}
 	if lc.Interval <= 0 {
