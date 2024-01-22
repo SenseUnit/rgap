@@ -126,18 +126,17 @@ func (o *HostsFile) dump() {
 		items := o.bridge.ListGroup(mapping.Group)
 		if len(items) == 0 {
 			for _, addr := range mapping.FallbackAddresses {
-				fmt.Fprintf(&buf, "%s %s\n", addr.String(), mapping.Hostname)
-			}
-			for _, item := range items {
-				fmt.Fprintf(&buf, "%s %s\n", item.Address().Unmap().String(), mapping.Hostname)
+				fmt.Fprintf(&buf, "%s %s # fallback address used!\n", addr.String(), mapping.Hostname)
 			}
 			continue
+		}
+		for _, item := range items {
+			fmt.Fprintf(&buf, "%s %s\n", item.Address().Unmap().String(), mapping.Hostname)
 		}
 	}
 	for _, line := range o.appendLines {
 		fmt.Fprintln(&buf, line)
 	}
-	log.Println(buf.String())
 	if err := atomicfile.WriteFile(o.filename, &buf); err != nil {
 		log.Printf("unable to update destination file: %v", err)
 	}
