@@ -68,6 +68,21 @@ outputs:
         - "# Do not edit manually, changes will be overwritten by RGAP"
       append_lines:
         - "# End of auto-generated file"
+  - kind: dns
+    spec:
+      bind_address: :8253
+      mappings:
+        worker.example.com:
+          group: 1000
+          fallback_addresses:
+            - 1.2.3.4
+            - 5.6.7.8
+        worker.example.org:
+          group: 1000
+          fallback_addresses:
+            - 1.2.3.4
+            - 5.6.7.8
+
 ```
 
 ### PSK Generator
