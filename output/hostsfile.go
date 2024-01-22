@@ -114,7 +114,7 @@ func (o *HostsFile) dump() {
 		}
 	}
 	if len(notReadyGroups) > 0 {
-		log.Printf("hostsfile: skipping update because following groups are not ready: %v", notReadyGroups)
+		log.Printf("hostsfile: skipping update because following groups are not ready yet: %v", notReadyGroups)
 		return
 	}
 
