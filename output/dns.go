@@ -50,7 +50,10 @@ func NewDNSServer(cfg *config.OutputConfig, bridge iface.GroupBridge) (*DNSServe
 }
 
 func (o *DNSServer) Start() error {
-	var startupErr error
+	var (
+		tcpStartupErr error
+		udpStartupErr error
+	)
 	o.tcpDone = make(chan struct{})
 	o.udpDone = make(chan struct{})
 	tcpStartupDone := make(chan struct{})
@@ -71,23 +74,22 @@ func (o *DNSServer) Start() error {
 	}
 	go func() {
 		defer close(o.tcpDone)
-		startupErr = o.tcpServer.ListenAndServe()
+		tcpStartupErr = o.tcpServer.ListenAndServe()
 	}()
 	select {
 	case <-tcpStartupDone:
 	case <-o.tcpDone:
-		return fmt.Errorf("output DNS server (TCP) startup failed: %w", startupErr)
+		return fmt.Errorf("output DNS server (TCP) startup failed: %w", tcpStartupErr)
 	}
 	go func() {
 		defer close(o.udpDone)
-		startupErr = o.udpServer.ListenAndServe()
+		udpStartupErr = o.udpServer.ListenAndServe()
 	}()
 	select {
 	case <-udpStartupDone:
 	case <-o.udpDone:
-		err := startupErr
 		o.tcpServer.Shutdown()
-		return fmt.Errorf("output DNS server (UDP) startup failed: %w", err)
+		return fmt.Errorf("output DNS server (UDP) startup failed: %w", udpStartupErr)
 	}
 	log.Printf("started DNS server (%s) output plugin", o.bindAddress)
 	return nil
