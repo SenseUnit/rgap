@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"pgregory.net/rand"
 
 	"github.com/Snawoot/rgap/config"
 	"github.com/Snawoot/rgap/iface"
@@ -33,6 +34,7 @@ type DNSServer struct {
 	udpServer   *dns.Server
 	tcpDone     chan struct{}
 	udpDone     chan struct{}
+	rand        *rand.Rand
 }
 
 func NewDNSServer(cfg *config.OutputConfig, bridge iface.GroupBridge) (*DNSServer, error) {
@@ -50,6 +52,7 @@ func NewDNSServer(cfg *config.OutputConfig, bridge iface.GroupBridge) (*DNSServe
 		bindAddress: oc.BindAddress,
 		mappings:    mappings,
 		compress:    oc.Compress,
+		rand:        rand.New(),
 	}, nil
 }
 
@@ -203,6 +206,7 @@ func (o *DNSServer) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 			}
 		}
 	}
+	rand.ShuffleSlice(o.rand, m.Answer)
 	m.SetReply(r)
 	w.WriteMsg(m)
 }
