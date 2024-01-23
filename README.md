@@ -5,9 +5,9 @@ Redundancy Group Announcement Protocol
 
 Design notes: https://gist.github.com/Snawoot/39282757e5f7db40632e5e01280b683f
 
-RGAP allows one group of hosts to be aware about IP addresses of other group of hosts.
+RGAP allows one group of hosts to be aware about IP addresses of another group of hosts.
 
-It is useful to inform load balancers about ever-changing IP addresses of worker server.
+It is useful to inform load balancers about ever-changing IP addresses of worker servers.
 
 Announcements are propagated via short HMAC-signed UDP messages, using unicast or multicast.
 
