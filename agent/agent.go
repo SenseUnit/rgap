@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/netip"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/Snawoot/rgap/config"
 	"github.com/Snawoot/rgap/protocol"
+	"github.com/Snawoot/rgap/util"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -92,7 +95,12 @@ func (a *Agent) singleRun(ctx context.Context, t time.Time) error {
 }
 
 func (a *Agent) sendSingle(ctx context.Context, msg []byte, dst string) error {
-	conn, err := a.cfg.Dialer.DialContext(ctx, "udp", dst)
+	dstAddr, iface, err := util.SplitAndResolveAddrSpec(dst)
+	if err != nil {
+		return fmt.Errorf("destination %s: interface resolving failed: %w", dst, err)
+	}
+
+	conn, err := a.dialInterfaceContext(ctx, "udp", dstAddr, iface)
 	if err != nil {
 		return fmt.Errorf("Agent.sendSingle dial failed: %w", err)
 	}
@@ -110,4 +118,29 @@ func (a *Agent) sendSingle(ctx context.Context, msg []byte, dst string) error {
 		return fmt.Errorf("Agent.sendSingle send failed: %w", err)
 	}
 	return nil
+}
+
+func (a *Agent) dialInterfaceContext(ctx context.Context, network, addr string, iif *net.Interface) (net.Conn, error) {
+	if iif == nil {
+		return a.cfg.Dialer.DialContext(ctx, network, addr)
+	}
+
+	var hints []string
+	addrs, err := iif.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	for _, addr := range addrs {
+		ipnet, ok := addr.(*net.IPNet)
+		if !ok {
+			return nil, fmt.Errorf("unexpected type returned as address interface: %T", addr)
+		}
+		netipAddr, ok := netip.AddrFromSlice(ipnet.IP)
+		if !ok {
+			return nil, fmt.Errorf("interface %v has invalid address %s", iif.Name, ipnet.IP)
+		}
+		hints = append(hints, netipAddr.Unmap().String())
+	}
+	boundDialer := util.NewBoundDialer(a.cfg.Dialer, strings.Join(hints, ","))
+	return boundDialer.DialContext(ctx, network, addr)
 }

@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/Snawoot/rgap/protocol"
+	"github.com/Snawoot/rgap/util"
 )
 
 type UDPSource struct {
@@ -33,7 +34,12 @@ func (s *UDPSource) Start() error {
 	s.ctxCancel = cancel
 	s.loopDone = make(chan struct{})
 
-	udpAddr, err := net.ResolveUDPAddr("udp", s.address)
+	listenAddr, iface, err := util.SplitAndResolveAddrSpec(s.address)
+	if err != nil {
+		return fmt.Errorf("UDP source %s: interface resolving failed: %w", s.address, err)
+	}
+
+	udpAddr, err := net.ResolveUDPAddr("udp", listenAddr)
 	if err != nil {
 		return fmt.Errorf("bad UDP listen address: %w", err)
 	}
@@ -41,7 +47,7 @@ func (s *UDPSource) Start() error {
 	var conn *net.UDPConn
 
 	if udpAddr.IP.IsMulticast() {
-		conn, err = net.ListenMulticastUDP("udp4", nil, udpAddr)
+		conn, err = net.ListenMulticastUDP("udp", iface, udpAddr)
 		if err != nil {
 			return fmt.Errorf("UDP listen failed: %w", err)
 		}
