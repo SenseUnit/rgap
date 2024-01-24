@@ -25,7 +25,7 @@ Listener accepts announces, verifies them and maintains the list of active IP ad
 RGAP_ADDRESS=127.1.2.3 RGAP_PSK=8f1302643b0809279794c5cc47f236561d7442b85d748bd7d1a58adfbe9ff431 rgap agent -g 1000 -i 5s
 ```
 
-where RGAP\_ADDRESS is actual IP address which node exposes to redundancy group.
+where RGAP\_ADDRESS is actual IP address which node exposes to the redundancy group.
 
 ### Listener
 
