@@ -187,7 +187,7 @@ func (o *DNSServer) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 		now := time.Now()
 		for _, item := range items {
 			netAddr := item.Address().Unmap()
-			ttl := uint32(item.ExpiresAt().Sub(now).Seconds())
+			ttl := uint32(util.Max(item.ExpiresAt().Sub(now).Seconds(), 0))
 			switch qtype {
 			case dns.TypeA:
 				if netAddr.Is4() {

@@ -9,6 +9,7 @@ import (
 	"net/netip"
 	"strings"
 
+	"golang.org/x/exp/constraints"
 	"gopkg.in/yaml.v3"
 )
 
@@ -116,4 +117,18 @@ func ResolveInterface(spec string) (*net.Interface, error) {
 		}
 	}
 	return nil, errors.New("specified interface not found")
+}
+
+func Max[T constraints.Ordered](x, y T) T {
+	if x >= y {
+		return x
+	}
+	return y
+}
+
+func Min[T constraints.Ordered](x, y T) T {
+	if x <= y {
+		return x
+	}
+	return y
 }
