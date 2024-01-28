@@ -10,9 +10,9 @@ import (
 
 	atomicfile "github.com/natefinch/atomic"
 
-	"github.com/Snawoot/rgap/config"
-	"github.com/Snawoot/rgap/iface"
-	"github.com/Snawoot/rgap/util"
+	"github.com/SenseUnit/rgap/config"
+	"github.com/SenseUnit/rgap/iface"
+	"github.com/SenseUnit/rgap/util"
 )
 
 type GroupHostMapping struct {

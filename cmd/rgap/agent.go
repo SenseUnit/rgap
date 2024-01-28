@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Snawoot/rgap/agent"
-	"github.com/Snawoot/rgap/config"
-	"github.com/Snawoot/rgap/psk"
+	"github.com/SenseUnit/rgap/agent"
+	"github.com/SenseUnit/rgap/config"
+	"github.com/SenseUnit/rgap/psk"
 )
 
 const (

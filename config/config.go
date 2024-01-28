@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/Snawoot/rgap/iface"
-	"github.com/Snawoot/rgap/psk"
+	"github.com/SenseUnit/rgap/iface"
+	"github.com/SenseUnit/rgap/psk"
 )
 
 type AgentConfig struct {

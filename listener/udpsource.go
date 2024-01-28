@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/Snawoot/rgap/protocol"
-	"github.com/Snawoot/rgap/util"
+	"github.com/SenseUnit/rgap/protocol"
+	"github.com/SenseUnit/rgap/util"
 )
 
 type UDPSource struct {

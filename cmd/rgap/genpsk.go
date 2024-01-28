@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Snawoot/rgap/psk"
+	"github.com/SenseUnit/rgap/psk"
 	"github.com/spf13/cobra"
 )
 

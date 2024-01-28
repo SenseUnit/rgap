@@ -6,10 +6,10 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/Snawoot/rgap/config"
-	"github.com/Snawoot/rgap/iface"
-	"github.com/Snawoot/rgap/protocol"
-	"github.com/Snawoot/rgap/psk"
+	"github.com/SenseUnit/rgap/config"
+	"github.com/SenseUnit/rgap/iface"
+	"github.com/SenseUnit/rgap/protocol"
+	"github.com/SenseUnit/rgap/psk"
 	"github.com/jellydator/ttlcache/v3"
 )
 

@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/Snawoot/rgap/config"
-	"github.com/Snawoot/rgap/listener"
+	"github.com/SenseUnit/rgap/config"
+	"github.com/SenseUnit/rgap/listener"
 )
 
 var (

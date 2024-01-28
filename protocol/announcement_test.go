@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Snawoot/rgap/psk"
-	"github.com/Snawoot/rgap/util"
+	"github.com/SenseUnit/rgap/psk"
+	"github.com/SenseUnit/rgap/util"
 )
 
 func noError(err error) {

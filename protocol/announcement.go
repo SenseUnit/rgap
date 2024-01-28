@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Snawoot/rgap/psk"
+	"github.com/SenseUnit/rgap/psk"
 )
 
 const (

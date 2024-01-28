@@ -3,8 +3,8 @@ package output
 import (
 	"errors"
 
-	"github.com/Snawoot/rgap/config"
-	"github.com/Snawoot/rgap/iface"
+	"github.com/SenseUnit/rgap/config"
+	"github.com/SenseUnit/rgap/iface"
 )
 
 type OutputCtor func(*config.OutputConfig, iface.GroupBridge) (iface.StartStopper, error)

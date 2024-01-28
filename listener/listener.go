@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Snawoot/rgap/config"
-	"github.com/Snawoot/rgap/iface"
-	"github.com/Snawoot/rgap/output"
-	"github.com/Snawoot/rgap/protocol"
+	"github.com/SenseUnit/rgap/config"
+	"github.com/SenseUnit/rgap/iface"
+	"github.com/SenseUnit/rgap/output"
+	"github.com/SenseUnit/rgap/protocol"
 )
 
 type Listener struct {

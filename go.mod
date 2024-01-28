@@ -1,4 +1,4 @@
-module github.com/Snawoot/rgap
+module github.com/SenseUnit/rgap
 
 go 1.21.4
 
