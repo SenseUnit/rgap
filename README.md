@@ -50,7 +50,11 @@ outputs:
     spec:
   - kind: log
     spec:
-      interval: 1s
+      interval: 60s
+  - kind: eventlog
+    spec: # or skip spec at all
+      only_groups: # or specify null for all groups
+        - 1000
   - kind: hostsfile
     spec:
       interval: 5s
