@@ -22,6 +22,9 @@ var outputVCMap = map[string]OutputCtor{
 	"dns": func(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
 		return NewDNSServer(cfg, bridge)
 	},
+	"eventlog": func(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
+		return NewEventLog(cfg, bridge)
+	},
 }
 
 func OutputFromConfig(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {

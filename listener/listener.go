@@ -108,3 +108,19 @@ func (l *Listener) GroupReady(id uint64) bool {
 	}
 	return g.Ready()
 }
+
+func (l *Listener) OnJoin(group uint64, cb iface.GroupEventCallback) func() {
+	g, ok := l.groups[group]
+	if !ok {
+		return func() {}
+	}
+	return g.OnJoin(cb)
+}
+
+func (l *Listener) OnLeave(group uint64, cb iface.GroupEventCallback) func() {
+	g, ok := l.groups[group]
+	if !ok {
+		return func() {}
+	}
+	return g.OnLeave(cb)
+}

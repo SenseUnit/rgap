@@ -1,6 +1,7 @@
 package listener
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/netip"
@@ -125,4 +126,22 @@ func (g *Group) List() []iface.GroupItem {
 
 func (g *Group) Ready() bool {
 	return time.Now().After(g.readyAt)
+}
+
+func (g *Group) OnJoin(cb iface.GroupEventCallback) func() {
+	return g.addrSet.OnInsertion(func(_ context.Context, item *ttlcache.Item[netip.Addr, struct{}]) {
+		cb(g.id, groupItem{
+			address:   item.Key(),
+			expiresAt: item.ExpiresAt(),
+		})
+	})
+}
+
+func (g *Group) OnLeave(cb iface.GroupEventCallback) func() {
+	return g.addrSet.OnEviction(func(_ context.Context, _ ttlcache.EvictionReason, item *ttlcache.Item[netip.Addr, struct{}]) {
+		cb(g.id, groupItem{
+			address:   item.Key(),
+			expiresAt: item.ExpiresAt(),
+		})
+	})
 }

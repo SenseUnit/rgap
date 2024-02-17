@@ -11,10 +11,14 @@ type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
+type GroupEventCallback = func(group uint64, item GroupItem)
+
 type GroupBridge interface {
 	Groups() []uint64
 	ListGroup(uint64) []GroupItem
 	GroupReady(uint64) bool
+	OnJoin(uint64, GroupEventCallback) func()
+	OnLeave(uint64, GroupEventCallback) func()
 }
 
 type GroupItem interface {
