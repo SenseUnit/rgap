@@ -78,8 +78,9 @@ func (o *Log) dump() {
 	var report strings.Builder
 	fmt.Fprintln(&report, "Groups snapshot:")
 	for _, gid := range o.bridge.Groups() {
-		fmt.Fprintf(&report, "  - Group %d (%s):\n", gid, readinessLabels[o.bridge.GroupReady(gid)])
-		for _, item := range o.bridge.ListGroup(gid) {
+		grpItems := o.bridge.ListGroup(gid)
+		fmt.Fprintf(&report, "  - Group %d (%s, %d entries):\n", gid, readinessLabels[o.bridge.GroupReady(gid)], len(grpItems))
+		for _, item := range grpItems {
 			fmt.Fprintf(&report, "    - %s (till %v)\n", item.Address().Unmap().String(), item.ExpiresAt())
 		}
 	}
