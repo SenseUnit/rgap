@@ -2,12 +2,55 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
 )
+
+const (
+	envLogPrefix = "RGAP_LOG_PREFIX"
+)
+
+var (
+	logPrefix logPrefixValue = newLogPrefixValue(defaultLogPrefix())
+)
+
+type logPrefixValue struct {
+	value *string
+}
+
+func newLogPrefixValue(s string) logPrefixValue {
+	return logPrefixValue{
+		value: &s,
+	}
+}
+
+func (v *logPrefixValue) String() string {
+	if v == nil || v.value == nil {
+		return defaultLogPrefix()
+	}
+	return *v.value
+}
+
+func (v *logPrefixValue) Type() string {
+	return "string"
+}
+
+func (v *logPrefixValue) Set(s string) error {
+	v.value = &s
+	return nil
+}
+
+func defaultLogPrefix() string {
+	if envLogPrefixValue, ok := os.LookupEnv(envLogPrefix); ok {
+		return envLogPrefixValue
+	}
+	return strings.ToUpper(progName) + ": "
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -25,6 +68,8 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	ctx, done := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer done()
+	log.Default().SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
+	log.Default().SetPrefix(logPrefix.String())
 	err := rootCmd.ExecuteContext(ctx)
 	if err != nil {
 		os.Exit(1)
@@ -36,7 +81,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cmd.yaml)")
+	rootCmd.PersistentFlags().Var(&logPrefix, "log-prefix", "log prefix")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
