@@ -1,8 +1,5 @@
 package main
 
-import (
-)
-
 const (
 	progName = "rgap"
 )

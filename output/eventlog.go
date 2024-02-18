@@ -14,8 +14,8 @@ type EventLogConfig struct {
 }
 
 type EventLog struct {
-	bridge iface.GroupBridge
-	groups []uint64
+	bridge   iface.GroupBridge
+	groups   []uint64
 	unsubFns []func()
 }
 
