@@ -35,8 +35,8 @@ func (o *EventLog) Start() error {
 	if groups == nil {
 		groups = o.bridge.Groups()
 	}
-	o.unsubFns = make([]func(), 0, len(o.groups)*2)
-	for _, group := range o.groups {
+	o.unsubFns = make([]func(), 0, len(groups)*2)
+	for _, group := range groups {
 		o.unsubFns = append(o.unsubFns,
 			o.bridge.OnJoin(group, func(group uint64, item iface.GroupItem) {
 				log.Printf("host %s has joined group %d", item.Address().Unmap().String(), group)
