@@ -11,6 +11,7 @@ import (
 	"github.com/SenseUnit/rgap/iface"
 	"github.com/SenseUnit/rgap/protocol"
 	"github.com/SenseUnit/rgap/psk"
+	"github.com/SenseUnit/rgap/util"
 	"github.com/jellydator/ttlcache/v3"
 )
 
@@ -104,7 +105,7 @@ func (g *Group) Ingest(a *protocol.Announcement) error {
 	expireAt := announceTime.Add(g.expire)
 	setItem := g.addrSet.Get(address)
 	if setItem == nil || setItem.ExpiresAt().Before(expireAt) {
-		g.addrSet.Set(address, struct{}{}, expireAt.Sub(now))
+		g.addrSet.Set(address, struct{}{}, util.Max(expireAt.Sub(now), 1))
 	}
 	return nil
 }
