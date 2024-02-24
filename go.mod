@@ -4,7 +4,7 @@ go 1.21.4
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jellydator/ttlcache/v3 v3.1.1
+	github.com/jellydator/ttlcache/v3 v3.2.0
 	github.com/miekg/dns v1.1.58
 	github.com/natefinch/atomic v1.0.1
 	github.com/spf13/cobra v1.8.0
