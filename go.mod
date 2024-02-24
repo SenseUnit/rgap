@@ -23,3 +23,5 @@ require (
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 )
+
+replace github.com/jellydator/ttlcache/v3 v3.2.0 => github.com/Snawoot/ttlcache/v3 v3.2.1-0.20240223174110-2ffa4e831bea
