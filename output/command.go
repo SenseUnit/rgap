@@ -87,7 +87,7 @@ func (o *Command) Stop() error {
 		unsub()
 	}
 	close(o.shutdown)
-	log.Println("command output plugin stopping - waiting commands to finish..")
+	log.Println("command output plugin stopping - waiting commands to finish...")
 	o.busy.Wait()
 	log.Println("stopped command output plugin")
 	return nil
