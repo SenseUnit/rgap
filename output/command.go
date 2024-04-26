@@ -16,10 +16,11 @@ import (
 )
 
 type CommandConfig struct {
-	Group   *uint64
-	Command []string
-	Timeout time.Duration
-	NoWait  bool
+	Group     *uint64
+	Command   []string
+	Timeout   time.Duration
+	NoWait    bool
+	WaitDelay *time.Duration `yaml:"wait_delay"`
 }
 
 type Command struct {
@@ -28,6 +29,7 @@ type Command struct {
 	command   []string
 	timeout   time.Duration
 	noWait    bool
+	waitDelay time.Duration
 	syncQueue chan struct{}
 	shutdown  chan struct{}
 	busy      sync.WaitGroup
@@ -45,12 +47,17 @@ func NewCommand(cfg *config.OutputConfig, bridge iface.GroupBridge) (*Command, e
 	if len(cc.Command) == 0 {
 		return nil, errors.New("command is not specified")
 	}
+	waitDelay := 100 * time.Millisecond
+	if cc.WaitDelay != nil {
+		waitDelay = *cc.WaitDelay
+	}
 	return &Command{
 		bridge:    bridge,
 		group:     *cc.Group,
 		command:   cc.Command,
 		timeout:   cc.Timeout,
 		noWait:    cc.NoWait,
+		waitDelay: waitDelay,
 		syncQueue: make(chan struct{}, 1),
 		shutdown:  make(chan struct{}),
 	}, nil
@@ -130,7 +137,7 @@ func (o *Command) runCommand() {
 	}
 
 	cmd := exec.CommandContext(ctx, o.command[0], o.command[1:]...)
-	cmd.WaitDelay = 1
+	cmd.WaitDelay = o.waitDelay
 
 	var stdinBuf bytes.Buffer
 	for _, item := range o.bridge.ListGroup(o.group) {
