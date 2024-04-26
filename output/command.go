@@ -1,11 +1,10 @@
 package output
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os/exec"
 	"sync"
@@ -130,64 +129,65 @@ func (o *Command) runCommand() {
 		ctx = ctx1
 	}
 
-	var wg sync.WaitGroup
-
 	cmd := exec.CommandContext(ctx, o.command[0], o.command[1:]...)
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		log.Printf("command %v run failed: %v", o.command, err)
-		return
-	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Printf("command %v run failed: %v", o.command, err)
-		return
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Printf("command %v run failed: %v", o.command, err)
-		return
-	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer stdin.Close()
-		grpItems := o.bridge.ListGroup(o.group)
-		for _, item := range grpItems {
-			fmt.Fprintln(stdin, item.Address().Unmap().String())
-		}
-	}()
+	var stdinBuf bytes.Buffer
+	for _, item := range o.bridge.ListGroup(o.group) {
+		fmt.Fprintln(&stdinBuf, item.Address().Unmap().String())
+	}
+	cmd.Stdin = &stdinBuf
+	cmd.Stdout = newOutputForwarder("stdout", o.command)
+	cmd.Stderr = newOutputForwarder("stderr", o.command)
+	cmd.WaitDelay = 1
 
 	log.Printf("starting sync command %v...", o.command)
-	if err := cmd.Start(); err != nil {
-		log.Printf("command %v run failed: %v", o.command, err)
-		return
-	}
-
-	forwardOutput := func(name string, source io.ReadCloser) {
-		defer wg.Done()
-		scanner := bufio.NewScanner(source)
-		for scanner.Scan() {
-			log.Printf("command %v %s: %s", o.command, name, scanner.Text())
-		}
-		if err := scanner.Err(); err != nil {
-			log.Printf("command %v %s broken: %v", o.command, name, err)
-		}
-	}
-	wg.Add(2)
-	go forwardOutput("stdout", stdout)
-	go forwardOutput("stderr", stderr)
-	wg.Wait()
-
-	if err := cmd.Wait(); err != nil {
+	if err := cmd.Run(); err != nil {
 		var ee *exec.ExitError
 		if errors.As(err, &ee) {
 			log.Printf("command %v exited with code %d", o.command, ee.ExitCode())
 		} else {
-			log.Printf("command %v run error: %v", err)
+			log.Printf("command %v run error: %v", o.command, err)
 		}
 	} else {
 		log.Printf("command %v succeeded", o.command)
 	}
+}
+
+type outputForwarder struct {
+	name    string
+	command []string
+	buf     []byte
+}
+
+func newOutputForwarder(name string, command []string) *outputForwarder {
+	return &outputForwarder{
+		name:    name,
+		command: command,
+	}
+}
+
+func dropCR(data []byte) []byte {
+	if len(data) > 0 && data[len(data)-1] == '\r' {
+		return data[0 : len(data)-1]
+	}
+	return data
+}
+
+func (of *outputForwarder) Write(p []byte) (int, error) {
+	n := len(p)
+	for i := bytes.IndexByte(p, '\n'); i >= 0; i = bytes.IndexByte(p, '\n') {
+		yield := dropCR(p[:i])
+		if len(of.buf) > 0 {
+			log.Printf("command %v %s: %s%s", of.command, of.name, of.buf, yield)
+			of.buf = nil
+		} else {
+			log.Printf("command %v %s: %s", of.command, of.name, yield)
+		}
+		p = p[i+1:]
+	}
+	if len(p) > 0 {
+		of.buf = make([]byte, len(p))
+		copy(of.buf, p)
+	}
+	return n, nil
 }
