@@ -17,6 +17,7 @@ type GroupBridge interface {
 	Groups() []uint64
 	ListGroup(uint64) []GroupItem
 	GroupReady(uint64) bool
+	GroupReadinessBarrier(uint64) <-chan struct{}
 	OnJoin(uint64, GroupEventCallback) func()
 	OnLeave(uint64, GroupEventCallback) func()
 }

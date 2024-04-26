@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
+	"sync/atomic"
 	"time"
 
 	"github.com/SenseUnit/rgap/config"
@@ -16,13 +17,15 @@ import (
 )
 
 type Group struct {
-	id             uint64
-	psk            psk.PSK
-	expire         time.Duration
-	clockSkew      time.Duration
-	readinessDelay time.Duration
-	addrSet        *ttlcache.Cache[netip.Addr, struct{}]
-	readyAt        time.Time
+	id               uint64
+	psk              psk.PSK
+	expire           time.Duration
+	clockSkew        time.Duration
+	readinessDelay   time.Duration
+	addrSet          *ttlcache.Cache[netip.Addr, struct{}]
+	ready            atomic.Bool
+	readinessBarrier chan struct{}
+	readinessTimer   *time.Timer
 }
 
 type groupItem struct {
@@ -46,11 +49,12 @@ func GroupFromConfig(cfg *config.GroupConfig) (*Group, error) {
 		return nil, fmt.Errorf("group %d: incorrect expiration time", cfg.Expire)
 	}
 	g := &Group{
-		id:             cfg.ID,
-		psk:            *cfg.PSK,
-		expire:         cfg.Expire,
-		clockSkew:      cfg.ClockSkew,
-		readinessDelay: cfg.ReadinessDelay,
+		id:               cfg.ID,
+		psk:              *cfg.PSK,
+		expire:           cfg.Expire,
+		clockSkew:        cfg.ClockSkew,
+		readinessDelay:   cfg.ReadinessDelay,
+		readinessBarrier: make(chan struct{}),
 		addrSet: ttlcache.New[netip.Addr, struct{}](
 			ttlcache.WithDisableTouchOnHit[netip.Addr, struct{}](),
 		),
@@ -72,13 +76,19 @@ func (g *Group) ID() uint64 {
 
 func (g *Group) Start() error {
 	go g.addrSet.Start()
-	g.readyAt = time.Now().Add(g.readinessDelay)
-	log.Printf("Group %d is ready.", g.id)
+	g.readinessTimer = time.AfterFunc(g.readinessDelay, func() {
+		g.ready.Store(true)
+		close(g.readinessBarrier)
+	})
+	log.Printf("Group %d was started.", g.id)
 	return nil
 }
 
 func (g *Group) Stop() error {
 	g.addrSet.Stop()
+	if g.readinessTimer != nil {
+		g.readinessTimer.Stop()
+	}
 	log.Printf("Group %d was destroyed.", g.id)
 	return nil
 }
@@ -126,7 +136,11 @@ func (g *Group) List() []iface.GroupItem {
 }
 
 func (g *Group) Ready() bool {
-	return time.Now().After(g.readyAt)
+	return g.ready.Load()
+}
+
+func (g *Group) ReadinessBarrier() <-chan struct{} {
+	return g.readinessBarrier
 }
 
 func (g *Group) OnJoin(cb iface.GroupEventCallback) func() {

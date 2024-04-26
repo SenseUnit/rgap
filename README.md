@@ -115,6 +115,17 @@ Configuration:
             * (_string_) addresses to use instead of group addresses if group is empty
 * **`compress`** (_boolean_) compress DNS response message
 
+#### `command`
+
+Pipes active addresses of group into stdin of external command after each membership change. Redirects stdout and stderr of external command to output into application log.
+
+Configuration:
+
+* **`group`** (_uint64_) identifier of group.
+* **`command`** (_list of strings_) command and arguments.
+* **`timeout`** (_duration_) execution time limit for the command.
+* **`wait_delay`** (_duration_) delay to wait for I/O to complete after process termination. Zero value disables I/O cancellation logic. Default is `100ms`.
+
 ### Configuration example
 
 ```yaml
@@ -168,6 +179,14 @@ outputs:
           fallback_addresses:
             - 1.2.3.4
             - 5.6.7.8
+  - kind: command
+    spec:
+      group: 1000
+      command:
+        - "/home/user/sync.sh"
+        - "--group"
+        - "1000"
+      timeout: 5s
 
 ```
  
