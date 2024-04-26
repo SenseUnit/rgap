@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
+	"sync/atomic"
 	"time"
 
 	"github.com/SenseUnit/rgap/config"
@@ -22,7 +23,7 @@ type Group struct {
 	clockSkew        time.Duration
 	readinessDelay   time.Duration
 	addrSet          *ttlcache.Cache[netip.Addr, struct{}]
-	readyAt          time.Time
+	ready            atomic.Bool
 	readinessBarrier chan struct{}
 	readinessTimer   *time.Timer
 }
@@ -75,8 +76,8 @@ func (g *Group) ID() uint64 {
 
 func (g *Group) Start() error {
 	go g.addrSet.Start()
-	g.readyAt = time.Now().Add(g.readinessDelay)
 	g.readinessTimer = time.AfterFunc(g.readinessDelay, func() {
+		g.ready.Store(true)
 		close(g.readinessBarrier)
 	})
 	log.Printf("Group %d was started.", g.id)
@@ -135,7 +136,7 @@ func (g *Group) List() []iface.GroupItem {
 }
 
 func (g *Group) Ready() bool {
-	return time.Now().After(g.readyAt)
+	return g.ready.Load()
 }
 
 func (g *Group) ReadinessBarrier() <-chan struct{} {
