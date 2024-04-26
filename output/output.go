@@ -25,6 +25,9 @@ var outputVCMap = map[string]OutputCtor{
 	"eventlog": func(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
 		return NewEventLog(cfg, bridge)
 	},
+	"command": func(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
+		return NewCommand(cfg, bridge)
+	},
 }
 
 func OutputFromConfig(cfg *config.OutputConfig, bridge iface.GroupBridge) (iface.StartStopper, error) {
