@@ -130,18 +130,28 @@ func (o *Command) runCommand() {
 	}
 
 	cmd := exec.CommandContext(ctx, o.command[0], o.command[1:]...)
+	cmd.WaitDelay = 1
 
 	var stdinBuf bytes.Buffer
 	for _, item := range o.bridge.ListGroup(o.group) {
 		fmt.Fprintln(&stdinBuf, item.Address().Unmap().String())
 	}
 	cmd.Stdin = &stdinBuf
-	cmd.Stdout = newOutputForwarder("stdout", o.command)
-	cmd.Stderr = newOutputForwarder("stderr", o.command)
-	cmd.WaitDelay = 1
 
-	log.Printf("starting sync command %v...", o.command)
-	if err := cmd.Run(); err != nil {
+	err := func() error {
+		stdout := newOutputForwarder("stdout", o.command)
+		defer stdout.Close()
+		cmd.Stdout = stdout
+
+		stderr := newOutputForwarder("stderr", o.command)
+		defer stderr.Close()
+		cmd.Stderr = stderr
+
+		log.Printf("starting sync command %v...", o.command)
+		return cmd.Run()
+	}()
+
+	if err != nil {
 		var ee *exec.ExitError
 		if errors.As(err, &ee) {
 			log.Printf("command %v exited with code %d", o.command, ee.ExitCode())
@@ -190,4 +200,12 @@ func (of *outputForwarder) Write(p []byte) (int, error) {
 		copy(of.buf, p)
 	}
 	return n, nil
+}
+
+func (of *outputForwarder) Close() error {
+	if len(of.buf) > 0 {
+		log.Printf("command %v %s: %s", of.command, of.name, of.buf)
+		of.buf = nil
+	}
+	return nil
 }
