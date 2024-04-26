@@ -124,7 +124,6 @@ Configuration:
 * **`group`** (_uint64_) identifier of group.
 * **`command`** (_list of strings_) command and arguments.
 * **`timeout`** (_duration_) execution time limit for the command.
-* **`nowait`** (_boolean_) don't wait for return of running command and allow new command running in parallel.
 * **`wait_delay`** (_duration_) delay to wait for I/O to complete after process termination. Zero value disables I/O cancellation logic. Default is `100ms`.
 
 ### Configuration example
@@ -187,7 +186,6 @@ outputs:
         - "/home/user/sync.sh"
         - "--group"
         - "1000"
-      nowait: false
       timeout: 5s
 
 ```

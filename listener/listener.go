@@ -109,6 +109,16 @@ func (l *Listener) GroupReady(id uint64) bool {
 	return g.Ready()
 }
 
+func (l *Listener) GroupReadinessBarrier(id uint64) <-chan struct{} {
+	g, ok := l.groups[id]
+	if !ok {
+		ch := make(chan struct{})
+		close(ch)
+		return ch
+	}
+	return g.ReadinessBarrier()
+}
+
 func (l *Listener) OnJoin(group uint64, cb iface.GroupEventCallback) func() {
 	g, ok := l.groups[group]
 	if !ok {

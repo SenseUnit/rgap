@@ -19,7 +19,6 @@ type CommandConfig struct {
 	Group     *uint64
 	Command   []string
 	Timeout   time.Duration
-	NoWait    bool
 	WaitDelay *time.Duration `yaml:"wait_delay"`
 }
 
@@ -28,7 +27,6 @@ type Command struct {
 	group     uint64
 	command   []string
 	timeout   time.Duration
-	noWait    bool
 	waitDelay time.Duration
 	syncQueue chan struct{}
 	shutdown  chan struct{}
@@ -56,7 +54,6 @@ func NewCommand(cfg *config.OutputConfig, bridge iface.GroupBridge) (*Command, e
 		group:     *cc.Group,
 		command:   cc.Command,
 		timeout:   cc.Timeout,
-		noWait:    cc.NoWait,
 		waitDelay: waitDelay,
 		syncQueue: make(chan struct{}, 1),
 		shutdown:  make(chan struct{}),
@@ -64,16 +61,14 @@ func NewCommand(cfg *config.OutputConfig, bridge iface.GroupBridge) (*Command, e
 }
 
 func (o *Command) Start() error {
-	if !o.noWait {
-		// This addition to WaitGroup must happen before any Wait()
-		// therefore it is synchronized with startup and holds back
-		// delivery of events before
-		o.busy.Add(1)
-		go func() {
-			defer o.busy.Done()
-			o.syncLoop()
-		}()
-	}
+	// This addition to WaitGroup must happen before any Wait()
+	// therefore it is synchronized with startup and holds back
+	// delivery of events before
+	o.busy.Add(1)
+	go func() {
+		defer o.busy.Done()
+		o.syncLoop()
+	}()
 	o.unsubFns = append(o.unsubFns,
 		o.bridge.OnJoin(o.group, func(group uint64, item iface.GroupItem) {
 			o.sync()
@@ -82,6 +77,7 @@ func (o *Command) Start() error {
 			o.sync()
 		}),
 	)
+	o.sync()
 	log.Println("started command output plugin")
 	return nil
 }
@@ -98,26 +94,18 @@ func (o *Command) Stop() error {
 }
 
 func (o *Command) sync() {
-	if o.noWait {
-		// This addition to WaitGroup must happen any Wait()
-		// therefore it is synchronized with event subscription
-		// funcs and holds them back. This way we can be sure that
-		// if unsub funcs invoked before Wait(), all additions are
-		// synchronized before Wait().
-		o.busy.Add(1)
-		go func() {
-			defer o.busy.Done()
-			o.runCommand()
-		}()
-	} else {
-		select {
-		case o.syncQueue <- struct{}{}:
-		default:
-		}
+	select {
+	case o.syncQueue <- struct{}{}:
+	default:
 	}
 }
 
 func (o *Command) syncLoop() {
+	select {
+	case <-o.shutdown:
+		return
+	case <-o.bridge.GroupReadinessBarrier(o.group):
+	}
 	for {
 		select {
 		case <-o.shutdown:
