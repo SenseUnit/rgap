@@ -124,6 +124,7 @@ Configuration:
 * **`group`** (_uint64_) identifier of group.
 * **`command`** (_list of strings_) command and arguments.
 * **`timeout`** (_duration_) execution time limit for the command.
+* **`retries`** (_int_) attempts to retry failed command. Default is `1`.
 * **`wait_delay`** (_duration_) delay to wait for I/O to complete after process termination. Zero value disables I/O cancellation logic. Default is `100ms`.
 
 ### Configuration example
@@ -187,6 +188,7 @@ outputs:
         - "--group"
         - "1000"
       timeout: 5s
+      retries: 3
 
 ```
  
