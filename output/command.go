@@ -124,7 +124,7 @@ func (o *Command) syncLoop() {
 }
 
 func (o *Command) runCommand() {
-	for i:=0; i<o.retries; i++ {
+	for i := 0; i < o.retries; i++ {
 		err := o.runCommandAttempt()
 		if err != nil {
 			var ee *exec.ExitError
@@ -138,7 +138,7 @@ func (o *Command) runCommand() {
 			return
 		}
 	}
-	log.Printf("command %v: all attempts failed!", o.command)
+	log.Printf("command %v all attempts failed!", o.command)
 }
 
 func (o *Command) runCommandAttempt() error {
@@ -158,18 +158,16 @@ func (o *Command) runCommandAttempt() error {
 	}
 	cmd.Stdin = &stdinBuf
 
-	return func() error {
-		stdout := newOutputForwarder("stdout", o.command)
-		defer stdout.Close()
-		cmd.Stdout = stdout
+	stdout := newOutputForwarder("stdout", o.command)
+	defer stdout.Close()
+	cmd.Stdout = stdout
 
-		stderr := newOutputForwarder("stderr", o.command)
-		defer stderr.Close()
-		cmd.Stderr = stderr
+	stderr := newOutputForwarder("stderr", o.command)
+	defer stderr.Close()
+	cmd.Stderr = stderr
 
-		log.Printf("starting sync command %v...", o.command)
-		return cmd.Run()
-	}()
+	log.Printf("starting sync command %v...", o.command)
+	return cmd.Run()
 }
 
 type outputForwarder struct {
