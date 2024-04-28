@@ -19,6 +19,7 @@ type CommandConfig struct {
 	Group     *uint64
 	Command   []string
 	Timeout   time.Duration
+	Retries   *int
 	WaitDelay *time.Duration `yaml:"wait_delay"`
 }
 
@@ -27,6 +28,7 @@ type Command struct {
 	group     uint64
 	command   []string
 	timeout   time.Duration
+	retries   int
 	waitDelay time.Duration
 	syncQueue chan struct{}
 	shutdown  chan struct{}
@@ -49,11 +51,16 @@ func NewCommand(cfg *config.OutputConfig, bridge iface.GroupBridge) (*Command, e
 	if cc.WaitDelay != nil {
 		waitDelay = *cc.WaitDelay
 	}
+	retries := 1
+	if cc.Retries != nil && *cc.Retries > 1 {
+		retries = *cc.Retries
+	}
 	return &Command{
 		bridge:    bridge,
 		group:     *cc.Group,
 		command:   cc.Command,
 		timeout:   cc.Timeout,
+		retries:   retries,
 		waitDelay: waitDelay,
 		syncQueue: make(chan struct{}, 1),
 		shutdown:  make(chan struct{}),
@@ -117,6 +124,24 @@ func (o *Command) syncLoop() {
 }
 
 func (o *Command) runCommand() {
+	for i:=0; i<o.retries; i++ {
+		err := o.runCommandAttempt()
+		if err != nil {
+			var ee *exec.ExitError
+			if errors.As(err, &ee) {
+				log.Printf("command %v exited with code %d", o.command, ee.ExitCode())
+			} else {
+				log.Printf("command %v run error: %v", o.command, err)
+			}
+		} else {
+			log.Printf("command %v succeeded", o.command)
+			return
+		}
+	}
+	log.Printf("command %v: all attempts failed!", o.command)
+}
+
+func (o *Command) runCommandAttempt() error {
 	ctx := context.Background()
 	if o.timeout > 0 {
 		ctx1, cancel := context.WithTimeout(ctx, o.timeout)
@@ -133,7 +158,7 @@ func (o *Command) runCommand() {
 	}
 	cmd.Stdin = &stdinBuf
 
-	err := func() error {
+	return func() error {
 		stdout := newOutputForwarder("stdout", o.command)
 		defer stdout.Close()
 		cmd.Stdout = stdout
@@ -145,17 +170,6 @@ func (o *Command) runCommand() {
 		log.Printf("starting sync command %v...", o.command)
 		return cmd.Run()
 	}()
-
-	if err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
-			log.Printf("command %v exited with code %d", o.command, ee.ExitCode())
-		} else {
-			log.Printf("command %v run error: %v", o.command, err)
-		}
-	} else {
-		log.Printf("command %v succeeded", o.command)
-	}
 }
 
 type outputForwarder struct {
