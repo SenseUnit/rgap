@@ -4,7 +4,7 @@ go 1.21.4
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jellydator/ttlcache/v3 v3.2.0
+	github.com/jellydator/ttlcache/v3 v3.2.1-0.20240611075242-62c37338e6b2
 	github.com/miekg/dns v1.1.58
 	github.com/natefinch/atomic v1.0.1
 	github.com/spf13/cobra v1.8.0
@@ -19,9 +19,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 )
-
-replace github.com/jellydator/ttlcache/v3 v3.2.0 => github.com/Snawoot/ttlcache/v3 v3.2.1-0.20240223174110-2ffa4e831bea
