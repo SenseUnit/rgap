@@ -114,6 +114,7 @@ Configuration:
         * **`fallback_addresses`** (_list_)
             * (_string_) addresses to use instead of group addresses if group is empty
 * **`compress`** (_boolean_) compress DNS response message
+* **`non_authoritative`** (_boolean_) if true, do not set AA bit for DNS response messages
 
 #### `command`
 
