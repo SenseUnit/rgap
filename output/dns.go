@@ -20,21 +20,23 @@ type DNSMapping struct {
 }
 
 type DNSServerConfig struct {
-	BindAddress string `yaml:"bind_address"`
-	Mappings    map[string]DNSMapping
-	Compress    bool
+	BindAddress      string `yaml:"bind_address"`
+	Mappings         map[string]DNSMapping
+	Compress         bool
+	NonAuthoritative bool `yaml:"non_authoritative"`
 }
 
 type DNSServer struct {
-	bridge      iface.GroupBridge
-	bindAddress string
-	mappings    map[string]DNSMapping
-	compress    bool
-	tcpServer   *dns.Server
-	udpServer   *dns.Server
-	tcpDone     chan struct{}
-	udpDone     chan struct{}
-	rand        *rand.Rand
+	bridge        iface.GroupBridge
+	bindAddress   string
+	mappings      map[string]DNSMapping
+	compress      bool
+	authoritative bool
+	tcpServer     *dns.Server
+	udpServer     *dns.Server
+	tcpDone       chan struct{}
+	udpDone       chan struct{}
+	rand          *rand.Rand
 }
 
 func NewDNSServer(cfg *config.OutputConfig, bridge iface.GroupBridge) (*DNSServer, error) {
@@ -48,11 +50,12 @@ func NewDNSServer(cfg *config.OutputConfig, bridge iface.GroupBridge) (*DNSServe
 		mappings[name] = mapping
 	}
 	return &DNSServer{
-		bridge:      bridge,
-		bindAddress: oc.BindAddress,
-		mappings:    mappings,
-		compress:    oc.Compress,
-		rand:        rand.New(),
+		bridge:        bridge,
+		bindAddress:   oc.BindAddress,
+		mappings:      mappings,
+		compress:      oc.Compress,
+		authoritative: !oc.NonAuthoritative,
+		rand:          rand.New(),
 	}, nil
 }
 
@@ -112,6 +115,7 @@ func (o *DNSServer) Stop() error {
 func (o *DNSServer) failDNSReq(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.Compress = o.compress
+	m.Authoritative = o.authoritative
 	m.SetRcode(r, dns.RcodeServerFailure)
 	w.WriteMsg(m)
 }
@@ -119,6 +123,7 @@ func (o *DNSServer) failDNSReq(w dns.ResponseWriter, r *dns.Msg) {
 func (o *DNSServer) serveEmptyResponse(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.Compress = o.compress
+	m.Authoritative = o.authoritative
 	m.SetReply(r)
 	w.WriteMsg(m)
 }
@@ -160,6 +165,7 @@ func (o *DNSServer) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 	m := new(dns.Msg)
 	m.Compress = o.compress
+	m.Authoritative = o.authoritative
 
 	items := o.bridge.ListGroup(mapping.Group)
 	if len(items) == 0 {
